@@ -1,16 +1,18 @@
-{
-  "name": "Test Push Workflow",
-  "nodes": [
-    {
-      "parameters": {},
-      "name": "Start",
-      "type": "n8n-nodes-base.start",
-      "typeVersion": 1,
-      "position": [250, 300]
-    }
-  ],
-  "connections": {},
-  "active": false,
-  "settings": {},
-  "versionId": "PLACEHOLDER_VERSION_ID"
-}
+[
+  {
+    "name": "Test Push Workflow",
+    "nodes": [
+      {
+        "parameters": {},
+        "name": "When clicking 'Test workflow'",
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
+        "position": [250, 300]
+      }
+    ],
+    "connections": {},
+    "active": false,
+    "settings": {},
+    "versionId": "PLACEHOLDER_VERSION_ID"
+  }
+]

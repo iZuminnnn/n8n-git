@@ -167,10 +167,14 @@ if [[ -z "$TEST_WORKFLOW_VERSION_ID" ]]; then
 fi
 TEST_WORKFLOW=$(sed "s/PLACEHOLDER_VERSION_ID/$TEST_WORKFLOW_VERSION_ID/" "$SCRIPT_DIR/fixtures/workflows/push-workflow-template.json")
 
-TEMP_WORKFLOW=$(testbed_docker exec "$TEST_CONTAINER" mktemp -p /tmp)
-testbed_docker exec "$TEST_CONTAINER" sh -c "cat <<'EOF' > $TEMP_WORKFLOW
-$TEST_WORKFLOW
-EOF"
+TEMP_WORKFLOW_HOST="$TEST_PUSH_DIR/push-workflow-import.json"
+printf '%s\n' "$TEST_WORKFLOW" > "$TEMP_WORKFLOW_HOST"
+TEMP_WORKFLOW="/tmp/push-workflow-import.json"
+WORKFLOW_HOST_PATH=$(test_convert_path_for_cli "$TEMP_WORKFLOW_HOST")
+testbed_docker cp "${WORKFLOW_HOST_PATH}" "$TEST_CONTAINER:$TEMP_WORKFLOW" >/dev/null 2>&1 || {
+    log ERROR "Failed to copy test workflow into container"
+    exit 1
+}
 testbed_docker exec "$TEST_CONTAINER" n8n import:workflow --input "$TEMP_WORKFLOW" >/dev/null 2>&1 || {
     log ERROR "Failed to import test workflow"
     exit 1
@@ -181,10 +185,14 @@ log INFO "Test workflow created"
 log INFO "Creating test credential..."
 TEST_CREDENTIAL=$(cat "$SCRIPT_DIR/fixtures/credentials/push-credential.json")
 
-TEMP_CREDENTIAL=$(testbed_docker exec "$TEST_CONTAINER" mktemp -p /tmp)
-testbed_docker exec "$TEST_CONTAINER" sh -c "cat <<'EOF' > $TEMP_CREDENTIAL
-$TEST_CREDENTIAL
-EOF"
+TEMP_CREDENTIAL_HOST="$TEST_PUSH_DIR/push-credential-import.json"
+printf '%s\n' "$TEST_CREDENTIAL" > "$TEMP_CREDENTIAL_HOST"
+TEMP_CREDENTIAL="/tmp/push-credential-import.json"
+CREDENTIAL_HOST_PATH=$(test_convert_path_for_cli "$TEMP_CREDENTIAL_HOST")
+testbed_docker cp "${CREDENTIAL_HOST_PATH}" "$TEST_CONTAINER:$TEMP_CREDENTIAL" >/dev/null 2>&1 || {
+    log ERROR "Failed to copy test credential into container"
+    exit 1
+}
 testbed_docker exec "$TEST_CONTAINER" n8n import:credentials --input "$TEMP_CREDENTIAL" --decrypted >/dev/null || {
     log ERROR "Failed to import test credential"
     exit 1
