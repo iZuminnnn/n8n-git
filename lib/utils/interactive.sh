@@ -107,12 +107,17 @@ show_config_summary() {
     fi
     
     if [[ "${local_pull_override:-false}" != "true" && -n "$github_repo" ]]; then
-        log INFO "  GitHub: ${value_color}$github_repo${NC} ${accent_color}(branch: ${github_branch:-main})${NC}"
+        local provider_display
+        provider_display="$(resolve_git_provider)"
+        local base_url_display
+        base_url_display="$(resolve_git_base_url)"
+        log INFO "  Git provider: ${value_color}${provider_display}${NC} ${accent_color}(${base_url_display})${NC}"
+        log INFO "  Repository: ${value_color}$github_repo${NC} ${accent_color}(branch: ${github_branch:-main})${NC}"
         if [[ -n "$github_token" ]]; then
             local pat_preview="${github_token:0:15}*****"
-            log INFO "  GitHub PAT: ${NORMAL}${pat_preview}${NC}"
+            log INFO "  Access token: ${NORMAL}${pat_preview}${NC}"
         else
-            log INFO "  GitHub PAT: ${DIM}<empty>${NC}"
+            log INFO "  Access token: ${DIM}<empty>${NC}"
         fi
     fi
 
@@ -559,12 +564,40 @@ get_github_config() {
     local local_repo="$github_repo"
     local local_branch="$github_branch"
 
-    log HEADER "GitHub Configuration"
+    log HEADER "Git Repository Configuration"
+
+    # Prompt for provider selection if not set or in reconfigure mode
+    if [[ -z "$git_provider" || "$reconfigure_mode" == "true" ]]; then
+        local provider_default
+        provider_default="$(resolve_git_provider)"
+        printf "Git provider (github/gitlab/gitea) [%s]: " "$provider_default"
+        local provider_input
+        read -r provider_input
+        provider_input="${provider_input:-$provider_default}"
+        case "${provider_input,,}" in
+            github|gitlab|gitea) git_provider="${provider_input,,}" ;;
+            *) log WARN "Unknown provider '$provider_input', defaulting to github"; git_provider="github" ;;
+        esac
+    fi
+
+    # Prompt for base URL if using gitlab/gitea (self-hosted) or in reconfigure mode
+    local current_provider
+    current_provider="$(resolve_git_provider)"
+    if [[ "$current_provider" != "github" || -n "$git_base_url" ]] || [[ "$reconfigure_mode" == "true" && "$current_provider" != "github" ]]; then
+        local url_default
+        url_default="$(resolve_git_base_url)"
+        printf "Git base URL [%s]: " "$url_default"
+        local url_input
+        read -r url_input
+        if [[ -n "$url_input" ]]; then
+            git_base_url="$url_input"
+        fi
+    fi
 
     # Re-ask for token if not set or in reconfigure mode
     if [[ -z "$local_token" || "$reconfigure_mode" == "true" ]]; then
         while true; do
-            local prompt="Enter GitHub Personal Access Token (PAT)"
+            local prompt="Enter Personal Access Token (PAT)"
             if [[ -n "$github_token" && "$reconfigure_mode" == "true" ]]; then
                 local masked
                 masked="$(printf '%s' "$github_token" | sed -E 's/^(.{15}).*/\1xxxx/')"
@@ -578,7 +611,7 @@ get_github_config() {
                 local_token="$github_token"
             fi
             if [ -z "$local_token" ]; then 
-                log ERROR "GitHub token is required."
+                log ERROR "Access token is required."
             else
                 break  # Exit loop once we have a valid token
             fi
@@ -587,7 +620,7 @@ get_github_config() {
 
     # Re-ask for repo if not set or in reconfigure mode
     while [[ -z "$local_repo" ]] || [[ "$reconfigure_mode" == "true" ]]; do
-        local repo_prompt="Enter GitHub repository (format: username/repo)"
+        local repo_prompt="Enter repository path (format: owner/repo)"
         if [[ -n "$github_repo" ]]; then
             repo_prompt="$repo_prompt [${github_repo}]"
         fi
@@ -599,7 +632,7 @@ get_github_config() {
             repo_input="$github_repo"
         fi
         if [ -z "$repo_input" ] || ! echo "$repo_input" | grep -q "/"; then
-            log ERROR "Invalid GitHub repository format. It should be 'username/repo'."
+            log ERROR "Invalid repository format. It should be 'owner/repo' (e.g., 'myuser/n8n-backup' or 'group/subgroup/project')."
             local_repo=""
             if [[ -n "$github_repo" ]]; then
                 local_repo="$github_repo"

@@ -58,11 +58,7 @@ build_reset_clone_url() {
         return 0
     fi
 
-    if [[ -n "$github_token" ]]; then
-        printf 'https://%s@github.com/%s.git\n' "$github_token" "$repo_value"
-    else
-        printf 'https://github.com/%s.git\n' "$repo_value"
-    fi
+    build_git_clone_url "$repo_value" "$github_token"
 }
 
 prepare_reset_repository() {

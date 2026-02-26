@@ -51,6 +51,10 @@ github_path="${github_path:-}"
 n8n_path="${n8n_path:-}"
 : "${N8N_GIT_DOCKER_BIN:=}"
 
+# Git provider settings
+: "${git_provider:=}"
+: "${git_base_url:=}"
+
 # ANSI colors for better UI (using printf for robustness)
 # Using TrueColor (24-bit) ANSI escape codes based on user specification
 printf -v BLUE    '\033[38;2;97;175;239m'  # INFO: #61AFEF
@@ -1670,6 +1674,15 @@ load_config() {
         github_branch="${github_branch:-main}"  # Set default if not configured anywhere
     fi
 
+    # === GIT PROVIDER SETTINGS ===
+    if [[ -z "$git_provider" && -n "${GIT_PROVIDER:-}" ]]; then
+        git_provider="$GIT_PROVIDER"
+    fi
+
+    if [[ -z "$git_base_url" && -n "${GIT_BASE_URL:-}" ]]; then
+        git_base_url="$GIT_BASE_URL"
+    fi
+
     # === CONTAINER SETTINGS ===
     if [[ -z "$container" && -n "${N8N_CONTAINER:-}" ]]; then
         container="$N8N_CONTAINER"
@@ -2141,15 +2154,152 @@ load_config() {
 }
 
 # Utility functions that other modules need
+
+# === Git Provider Abstraction Layer ===
+# Supports: github, gitlab, gitea (default: github for backward compatibility)
+
+resolve_git_provider() {
+    local provider="${git_provider:-}"
+    if [[ -z "$provider" ]]; then
+        # Auto-detect from git_base_url if set
+        if [[ -n "${git_base_url:-}" ]]; then
+            case "${git_base_url,,}" in
+                *gitlab*) provider="gitlab" ;;
+                *gitea*) provider="gitea" ;;
+                *github*) provider="github" ;;
+                *) provider="gitlab" ;;  # Default to gitlab for custom URLs (most common self-hosted)
+            esac
+        else
+            provider="github"
+        fi
+    fi
+    printf '%s' "${provider,,}"
+}
+
+resolve_git_base_url() {
+    local provider
+    provider="$(resolve_git_provider)"
+    local base_url="${git_base_url:-}"
+
+    if [[ -z "$base_url" ]]; then
+        case "$provider" in
+            github) base_url="https://github.com" ;;
+            gitlab) base_url="https://gitlab.com" ;;
+            gitea)  base_url="https://gitea.com" ;;
+            *)      base_url="https://github.com" ;;
+        esac
+    fi
+
+    # Strip trailing slash
+    base_url="${base_url%/}"
+    printf '%s' "$base_url"
+}
+
+resolve_git_api_url() {
+    local provider
+    provider="$(resolve_git_provider)"
+    local base_url
+    base_url="$(resolve_git_base_url)"
+
+    case "$provider" in
+        github)
+            if [[ "$base_url" == "https://github.com" ]]; then
+                printf 'https://api.github.com'
+            else
+                # GitHub Enterprise: base_url/api/v3
+                printf '%s/api/v3' "$base_url"
+            fi
+            ;;
+        gitlab)
+            printf '%s/api/v4' "$base_url"
+            ;;
+        gitea)
+            printf '%s/api/v1' "$base_url"
+            ;;
+        *)
+            printf '%s/api' "$base_url"
+            ;;
+    esac
+}
+
+build_git_clone_url() {
+    local repo_value="$1"
+    local token="${2:-}"
+
+    # If already a full URL or SSH, return as-is
+    if [[ "$repo_value" =~ ^(https?://|git@) ]]; then
+        printf '%s\n' "$repo_value"
+        return 0
+    fi
+
+    local base_url
+    base_url="$(resolve_git_base_url)"
+    local provider
+    provider="$(resolve_git_provider)"
+
+    # Extract scheme and host+path from base_url
+    local scheme="${base_url%%://*}"    # e.g., "https" or "http"
+    local host_path="${base_url#*://}"  # e.g., "github.com" or "192.168.1.100/gitlab"
+
+    if [[ -n "$token" ]]; then
+        case "$provider" in
+            gitlab)
+                # GitLab uses oauth2:TOKEN format for PAT over HTTPS
+                printf '%s://oauth2:%s@%s/%s.git\n' "$scheme" "$token" "$host_path" "$repo_value"
+                ;;
+            gitea)
+                # Gitea uses token directly as username
+                printf '%s://%s@%s/%s.git\n' "$scheme" "$token" "$host_path" "$repo_value"
+                ;;
+            github|*)
+                # GitHub uses token directly as username
+                printf '%s://%s@%s/%s.git\n' "$scheme" "$token" "$host_path" "$repo_value"
+                ;;
+        esac
+    else
+        printf '%s/%s.git\n' "$base_url" "$repo_value"
+    fi
+}
+
+# Unified access check that dispatches to the right provider
+check_git_access() {
+    local token="$1"
+    local repo="$2"
+
+    local provider
+    provider="$(resolve_git_provider)"
+
+    log DEBUG "Testing Git access to repository: $repo (provider: $provider)"
+
+    case "$provider" in
+        github)
+            check_github_access "$token" "$repo"
+            ;;
+        gitlab)
+            check_gitlab_access "$token" "$repo"
+            ;;
+        gitea)
+            check_gitea_access "$token" "$repo"
+            ;;
+        *)
+            log WARN "Unknown provider '$provider'; skipping access pre-check."
+            return 0
+            ;;
+    esac
+}
+
 check_github_access() {
     local token="$1"
     local repo="$2"
     
-    log DEBUG "Testing GitHub access to repository: $repo"
+    local api_url
+    api_url="$(resolve_git_api_url)"
+    
+    log DEBUG "Testing GitHub access to repository: $repo (API: $api_url)"
     
     local response
     if ! response=$(curl -s -w "%{http_code}" -H "Authorization: token $token" \
-                          "https://api.github.com/repos/$repo" 2>/dev/null); then
+                          "$api_url/repos/$repo" 2>/dev/null); then
         return 1
     fi
     
@@ -2168,6 +2318,77 @@ check_github_access() {
         *)
             log ERROR "GitHub API returned HTTP $http_code"
             return 1 ;;
+    esac
+}
+
+check_gitlab_access() {
+    local token="$1"
+    local repo="$2"
+    
+    local api_url
+    api_url="$(resolve_git_api_url)"
+    
+    # GitLab requires URL-encoded project path (/ -> %2F)
+    local encoded_repo="${repo//\//%2F}"
+    
+    log DEBUG "Testing GitLab access to project: $repo (API: $api_url)"
+    
+    local response
+    if ! response=$(curl -s -w "%{http_code}" -H "PRIVATE-TOKEN: $token" \
+                          "$api_url/projects/$encoded_repo" 2>/dev/null); then
+        log WARN "GitLab API request failed (network error). Skipping access check."
+        return 0
+    fi
+    
+    local http_code="${response: -3}"
+    
+    case "$http_code" in
+        200) 
+            log DEBUG "GitLab access test successful"
+            return 0 ;;
+        404)
+            log ERROR "Project '$repo' not found on GitLab or not accessible with provided token"
+            return 1 ;;
+        401|403)
+            log ERROR "GitLab access denied. Check your token permissions (needs read_repository and write_repository scopes)."
+            return 1 ;;
+        *)
+            log WARN "GitLab API returned HTTP $http_code. Proceeding anyway."
+            return 0 ;;
+    esac
+}
+
+check_gitea_access() {
+    local token="$1"
+    local repo="$2"
+    
+    local api_url
+    api_url="$(resolve_git_api_url)"
+    
+    log DEBUG "Testing Gitea access to repository: $repo (API: $api_url)"
+    
+    local response
+    if ! response=$(curl -s -w "%{http_code}" -H "Authorization: token $token" \
+                          "$api_url/repos/$repo" 2>/dev/null); then
+        log WARN "Gitea API request failed (network error). Skipping access check."
+        return 0
+    fi
+    
+    local http_code="${response: -3}"
+    
+    case "$http_code" in
+        200) 
+            log DEBUG "Gitea access test successful"
+            return 0 ;;
+        404)
+            log ERROR "Repository '$repo' not found on Gitea or not accessible with provided token"
+            return 1 ;;
+        401|403)
+            log ERROR "Gitea access denied. Check your token permissions."
+            return 1 ;;
+        *)
+            log WARN "Gitea API returned HTTP $http_code. Proceeding anyway."
+            return 0 ;;
     esac
 }
 

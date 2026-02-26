@@ -10,17 +10,32 @@
 # This file should be added to .gitignore for security when used locally
 
 # === REQUIRED SETTINGS (for remote operations) ===
-# GitHub Personal Access Token for repository access
+
+# Git provider: github, gitlab, or gitea (defaults to 'github')
+# Set to 'gitlab' for GitLab (including self-hosted instances)
+# Set to 'gitea' for Gitea instances
+# GIT_PROVIDER="github"
+
+# Git base URL for self-hosted instances (optional)
+# Not needed for github.com or gitlab.com - only for self-hosted
+# Examples:
+#   GIT_BASE_URL="http://192.168.1.100"           # Self-hosted GitLab on LAN (HTTP)
+#   GIT_BASE_URL="https://gitlab.mycompany.local"  # Self-hosted GitLab with HTTPS
+#   GIT_BASE_URL="http://10.0.0.5:3000"            # Gitea on custom port
+# GIT_BASE_URL=""
+
+# Personal Access Token for repository access
+# Works with GitHub PAT, GitLab PAT, or Gitea token
 GITHUB_TOKEN="ghp_1234567890abcdef1234567890abcdef12345678"
 
-# GitHub repository in format: username/repository  
+# Repository path in format: owner/repository (or group/subgroup/project for GitLab)
 GITHUB_REPO="myuser/n8n-backup"
 
 # n8n container ID or name to push/pull (defaults to "n8n" if left unset)
 N8N_CONTAINER="n8n-container-name"
 
-# === OPTIONAL GITHUB SETTINGS ===
-# GitHub branch to use (defaults to 'main')
+# === OPTIONAL GIT SETTINGS ===
+# Branch to use (defaults to 'main')
 GITHUB_BRANCH="main"
 
 # Optional: prefix within the repository where workflows are stored, or retrieved from (e.g., "myvps" or "prod/env")

@@ -91,6 +91,10 @@ github_token=""
 github_repo=""
 github_branch="main"
 
+# Git provider settings (supports github, gitlab, gitea)
+git_provider=""               # empty = auto-detect or default to "github"
+git_base_url=""               # empty = use default for provider (e.g., https://github.com, https://gitlab.com)
+
 # Storage settings (handled by numeric config)
 workflows=""              # empty = unset, 0=disabled, 1=local, 2=remote
 credentials=""            # empty = unset, 0=disabled, 1=local, 2=remote
@@ -237,7 +241,9 @@ main() {
                 ;;
             --token) github_token="$2"; shift 2 ;; 
             --repo) github_repo="$2"; shift 2 ;; 
-            --branch) github_branch="$2"; shift 2 ;; 
+            --branch) github_branch="$2"; shift 2 ;;
+            --git-provider) git_provider="$2"; shift 2 ;;
+            --git-base-url|--base-url) git_base_url="$2"; shift 2 ;; 
             --config) config_file="$2"; shift 2 ;; 
             --project)
                 if [[ -z "$2" || "$2" == -* ]]; then
@@ -996,22 +1002,26 @@ main() {
         exit 1
     fi
     
-    # For remote operations, GitHub parameters are required
+    # For remote operations, Git parameters are required
     if [[ $needs_github == true ]]; then
         if [ -z "$github_token" ] || [ -z "$github_repo" ] || [ -z "$github_branch" ]; then
-            log ERROR "Missing required GitHub parameters (Token, Repo, Branch) for remote operations. Exiting."
+            local provider_label
+            provider_label="$(resolve_git_provider)"
+            log ERROR "Missing required Git parameters (Token, Repo, Branch) for remote operations (provider: $provider_label). Exiting."
             exit 1
         fi
     fi
 
-    # Perform GitHub API pre-checks only when needed
+    # Perform Git API pre-checks only when needed
     if $needs_github; then
-        if ! check_github_access "$github_token" "$github_repo" "$github_branch" "$command"; then
-            log ERROR "GitHub access pre-checks failed. Aborting."
+        if ! check_git_access "$github_token" "$github_repo" "$github_branch" "$command"; then
+            local provider_label
+            provider_label="$(resolve_git_provider)"
+            log ERROR "Git access pre-checks failed (provider: $provider_label). Aborting."
             exit 1
         fi
     else
-        log INFO "Local-only operation - skipping GitHub validation"
+        log INFO "Local-only operation - skipping Git validation"
     fi
 
     # Execute the requested command
