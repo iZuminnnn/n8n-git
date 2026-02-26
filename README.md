@@ -17,14 +17,14 @@
 
 <!-- ALL_BADGES_START -->
 <p align="center">
-  <a href="https://github.com/tcoretech/n8n-git/releases/latest"><img src="https://img.shields.io/github/v/release/tcoretech/n8n-git?style=flat-square" alt="Latest Release" /></a>
+  <a href="https://github.com/iZuminnnn/n8n-git/releases/latest"><img src="https://img.shields.io/github/v/release/iZuminnnn/n8n-git?style=flat-square" alt="Latest Release" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square" alt="MIT License" /></a>
-  <a href="https://github.com/tcoretech/n8n-git/stargazers"><img src="https://img.shields.io/github/stars/tcoretech/n8n-git?style=flat-square&logo=github" alt="GitHub Stars" /></a>
-  <a href="https://github.com/tcoretech/n8n-git/network/members"><img src="https://img.shields.io/github/forks/tcoretech/n8n-git?style=flat-square&logo=github" alt="GitHub Forks" /></a>
-  <a href="https://github.com/tcoretech/n8n-git/graphs/contributors"><img src="https://img.shields.io/github/contributors/tcoretech/n8n-git?style=flat-square" alt="Contributors" /></a>
-  <a href="https://github.com/tcoretech/n8n-git/commits/main"><img src="https://img.shields.io/github/last-commit/tcoretech/n8n-git?style=flat-square" alt="Last Commit" /></a>
-  <a href="https://github.com/tcoretech/n8n-git"><img src="https://img.shields.io/badge/status-active-success.svg?style=flat-square" alt="Status: Active" /></a>
-  <a href="https://github.com/tcoretech/n8n-git"><img src="https://komarev.com/ghpvc/?username=tcoretech&repo=n8n-git&style=flat-square" alt="Views" /></a>
+  <a href="https://github.com/iZuminnnn/n8n-git/stargazers"><img src="https://img.shields.io/github/stars/iZuminnnn/n8n-git?style=flat-square&logo=github" alt="GitHub Stars" /></a>
+  <a href="https://github.com/iZuminnnn/n8n-git/network/members"><img src="https://img.shields.io/github/forks/iZuminnnn/n8n-git?style=flat-square&logo=github" alt="GitHub Forks" /></a>
+  <a href="https://github.com/iZuminnnn/n8n-git/graphs/contributors"><img src="https://img.shields.io/github/contributors/iZuminnnn/n8n-git?style=flat-square" alt="Contributors" /></a>
+  <a href="https://github.com/iZuminnnn/n8n-git/commits/main"><img src="https://img.shields.io/github/last-commit/iZuminnnn/n8n-git?style=flat-square" alt="Last Commit" /></a>
+  <a href="https://github.com/iZuminnnn/n8n-git"><img src="https://img.shields.io/badge/status-active-success.svg?style=flat-square" alt="Status: Active" /></a>
+  <a href="https://github.com/iZuminnnn/n8n-git"><img src="https://komarev.com/ghpvc/?username=iZuminnnn&repo=n8n-git&style=flat-square" alt="Views" /></a>
 </p>
 <!-- ALL_BADGES_END -->
 
@@ -66,19 +66,19 @@ n8n-git supports multiple execution environments:
 ### One-liner (Recommended)
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/tcoretech/n8n-git/main/install.sh | sudo bash
+curl -sSL https://raw.githubusercontent.com/iZuminnnn/n8n-git/main/install.sh | sudo bash
 ```
 
 This installs `n8n-git` to `/usr/local/bin` and libraries to `/usr/local/share/n8n-git/lib`. Customize with environment variables:
 
 ```bash
-PREFIX="$HOME/.local" curl -sSL https://raw.githubusercontent.com/tcoretech/n8n-git/main/install.sh | bash
+PREFIX="$HOME/.local" curl -sSL https://raw.githubusercontent.com/iZuminnnn/n8n-git/main/install.sh | bash
 ```
 
 ### Clone and Install
 
 ```bash
-git clone https://github.com/tcoretech/n8n-git.git
+git clone https://github.com/iZuminnnn/n8n-git.git
 cd n8n-git
 make install  # Defaults to /usr/local; override with PREFIX=/custom/path
 ```
@@ -428,7 +428,7 @@ n8n-git reset --to main --dry-run
 If `n8n-git` saves you time or helps you in your workflows,
 you can say thanks and support further development here:
 
-[![Buy Me A Coffee](https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&slug=tcoretech&button_colour=FFDD00&font_colour=000000&outline_colour=000000&coffee_colour=ffffff)](https://buymeacoffee.com/tcoretech)
+[![Buy Me A Coffee](https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&slug=iZuminnnn&button_colour=FFDD00&font_colour=000000&outline_colour=000000&coffee_colour=ffffff)](https://buymeacoffee.com/iZuminnnn)
 
 ## 🤝 Contributing
 
@@ -437,7 +437,7 @@ you can say thanks and support further development here:
 1. **Clone and setup**:
 
    ```bash
-   git clone https://github.com/tcoretech/n8n-git.git
+   git clone https://github.com/iZuminnnn/n8n-git.git
    cd n8n-git
    ```
 

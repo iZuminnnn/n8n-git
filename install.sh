@@ -45,7 +45,7 @@ fi
 # 2. Resolve 'latest' to actual git tag via GitHub API
 if [ "$SOURCE_REF" = "latest" ]; then
     log INFO "Resolving latest version tag..."
-    LATEST_TAG=$(curl -s https://api.github.com/repos/tcoretech/n8n-git/releases/latest | grep '"tag_name":' | head -n 1 | cut -d '"' -f 4)
+    LATEST_TAG=$(curl -s https://api.github.com/repos/iZuminnnn/n8n-git/releases/latest | grep '"tag_name":' | head -n 1 | cut -d '"' -f 4)
 
     if [ -n "$LATEST_TAG" ]; then
         SOURCE_REF="$LATEST_TAG"
@@ -58,7 +58,7 @@ fi
 
 # 3. Construct Archive URL (works for both tags and branches)
 # GitHub supports /archive/<ref>.tar.gz for both tags (v1.0.0) and branches (main)
-ARCHIVE_URL="${N8N_GIT_SOURCE_URL:-https://github.com/tcoretech/n8n-git/archive/${SOURCE_REF}.tar.gz}"
+ARCHIVE_URL="${N8N_GIT_SOURCE_URL:-https://github.com/iZuminnnn/n8n-git/archive/${SOURCE_REF}.tar.gz}"
 
 # ------------------------------------------------------------
 
@@ -124,4 +124,3 @@ log SUCCESS "n8n-git installed successfully"
 log INFO "Binary: $SCRIPT_DEST"
 log INFO "Libraries: $LIB_DEST"
 log INFO "Run '$INSTALL_NAME --help' to get started."
-

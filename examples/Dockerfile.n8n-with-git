@@ -30,7 +30,7 @@ RUN apk update && apk add --no-cache \
 
 # Install n8n-git
 # Note: In a real deployment, you might pin a specific version or commit
-RUN curl -fsSL https://raw.githubusercontent.com/tcoretech/n8n-git/main/install.sh | bash
+RUN curl -fsSL https://raw.githubusercontent.com/iZuminnnn/n8n-git/main/install.sh | bash
 
 # Create directory for n8n-git configuration
 RUN mkdir -p /home/node/.config/n8n-git && \

@@ -6,7 +6,7 @@
 # and performing self-updates of n8n-git
 
 # GitHub repository for n8n-git
-N8N_GIT_REPO="${N8N_GIT_REPO:-tcoretech/n8n-git}"
+N8N_GIT_REPO="${N8N_GIT_REPO:-iZuminnnn/n8n-git}"
 N8N_GIT_UPDATE_CHECK_INTERVAL="${N8N_GIT_UPDATE_CHECK_INTERVAL:-86400}"  # 24 hours in seconds
 
 # Global variables for update state (initialized to prevent unset variable issues)

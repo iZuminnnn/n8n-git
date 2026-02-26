@@ -278,7 +278,7 @@ Examples:
   # Show version info
   n8n-git version
 
-For more help, see: https://github.com/tcoretech/n8n-git
+For more help, see: https://github.com/iZuminnnn/n8n-git
 EOF
 }
 
