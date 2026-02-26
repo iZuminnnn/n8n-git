@@ -170,13 +170,17 @@ TEST_WORKFLOW=$(sed "s/PLACEHOLDER_VERSION_ID/$TEST_WORKFLOW_VERSION_ID/" "$SCRI
 TEMP_WORKFLOW_HOST="$TEST_PUSH_DIR/push-workflow-import.json"
 printf '%s\n' "$TEST_WORKFLOW" > "$TEMP_WORKFLOW_HOST"
 TEMP_WORKFLOW="/tmp/push-workflow-import.json"
-WORKFLOW_HOST_PATH=$(test_convert_path_for_cli "$TEMP_WORKFLOW_HOST")
-testbed_docker cp "${WORKFLOW_HOST_PATH}" "$TEST_CONTAINER:$TEMP_WORKFLOW" >/dev/null 2>&1 || {
+testbed_docker exec -i "$TEST_CONTAINER" sh -c "cat > $TEMP_WORKFLOW" < "$TEMP_WORKFLOW_HOST" || {
     log ERROR "Failed to copy test workflow into container"
     exit 1
 }
-testbed_docker exec "$TEST_CONTAINER" n8n import:workflow --input "$TEMP_WORKFLOW" >/dev/null 2>&1 || {
+testbed_docker exec --user root "$TEST_CONTAINER" chmod 644 "$TEMP_WORKFLOW" >/dev/null 2>&1 || true
+IMPORT_WF_LOG="$TEST_PUSH_DIR/import_workflow.log"
+testbed_docker exec "$TEST_CONTAINER" n8n import:workflow --input "$TEMP_WORKFLOW" >"$IMPORT_WF_LOG" 2>&1 || {
     log ERROR "Failed to import test workflow"
+    if [[ -s "$IMPORT_WF_LOG" ]]; then
+        cat "$IMPORT_WF_LOG" >&2
+    fi
     exit 1
 }
 log INFO "Test workflow created"
@@ -188,8 +192,7 @@ TEST_CREDENTIAL=$(cat "$SCRIPT_DIR/fixtures/credentials/push-credential.json")
 TEMP_CREDENTIAL_HOST="$TEST_PUSH_DIR/push-credential-import.json"
 printf '%s\n' "$TEST_CREDENTIAL" > "$TEMP_CREDENTIAL_HOST"
 TEMP_CREDENTIAL="/tmp/push-credential-import.json"
-CREDENTIAL_HOST_PATH=$(test_convert_path_for_cli "$TEMP_CREDENTIAL_HOST")
-testbed_docker cp "${CREDENTIAL_HOST_PATH}" "$TEST_CONTAINER:$TEMP_CREDENTIAL" >/dev/null 2>&1 || {
+testbed_docker exec -i "$TEST_CONTAINER" sh -c "cat > $TEMP_CREDENTIAL" < "$TEMP_CREDENTIAL_HOST" || {
     log ERROR "Failed to copy test credential into container"
     exit 1
 }
@@ -362,8 +365,7 @@ TEMP_RESTORE_WORKFLOWS="/tmp/workflows-restore.json"
 testbed_docker exec "$TEST_CONTAINER" rm -f "$TEMP_RESTORE_WORKFLOWS" >/dev/null 2>&1 || true
 RESTORE_WORKFLOW_LOG="$TEST_PUSH_DIR/restore_workflow.log"
 
-WORKFLOW_JSON_DOCKER_PATH=$(test_convert_path_for_cli "$ENCRYPTED_WORKFLOW_JSON")
-if ! testbed_docker cp "${WORKFLOW_JSON_DOCKER_PATH}" "$TEST_CONTAINER:$TEMP_RESTORE_WORKFLOWS" >/dev/null 2>&1; then
+if ! testbed_docker exec -i "$TEST_CONTAINER" sh -c "cat > $TEMP_RESTORE_WORKFLOWS" < "$ENCRYPTED_WORKFLOW_JSON"; then
     log ERROR "Failed to copy encrypted workflow push into container"
     exit 1
 fi
@@ -389,7 +391,9 @@ fi
 log HEADER "Push Test Summary"
 TEMP_VERIFY=$(testbed_docker exec "$TEST_CONTAINER" mktemp -p /tmp)
 testbed_docker exec "$TEST_CONTAINER" n8n export:workflow --all --output "$TEMP_VERIFY" >/dev/null 2>&1
-WORKFLOW_COUNT=$(testbed_docker exec "$TEST_CONTAINER" jq 'length' "$TEMP_VERIFY")
+VERIFY_HOST="$TEST_PUSH_DIR/verify_workflows.json"
+testbed_docker exec -i "$TEST_CONTAINER" cat "$TEMP_VERIFY" > "$VERIFY_HOST"
+WORKFLOW_COUNT=$(jq 'length' "$VERIFY_HOST")
 
 if [ "$WORKFLOW_COUNT" -lt 1 ]; then
     log ERROR "No workflows found after restore"
