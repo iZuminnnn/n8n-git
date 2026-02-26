@@ -5,6 +5,46 @@ All notable changes to n8n Git will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.3] - 2026-02-26
+
+### Added
+-  enhance Git provider support and configuration
+-  allow "latest" install tag on version
+-  add bootstrap test job to CI and update Makefile; enhance test-bootstrap.sh permissions
+-  enable parallel organisation and upload during pull commands, implement folder caching and fix minor issues with reset
+-  add version check and self-update capability (#4)
+-  initial release v1.0.0
+
+### Fixed
+-  allow passing of specific versions for install
+-  folder structure interleaving during import and issues with importing active workflows
+-  shellcheck fixes and update / version management variable bug fixes
+-  skip uncommitted changes check when using temporary clone in reset scripts
+-  address folder path resolution and clearer error messaging in reset scripts
+-  improve exit code handling and add temp file cleanup
+
+### Documentation
+- changelog): update for v1.2.2
+- changelog): update for v1.2.1
+- changelog): update for v1.2.0
+- changelog): update for v1.1.0
+
+### Maintenance
+- release): bump version to 1.2.3
+-  update repository references from tcoretech to iZuminnnn
+- release): bump version to 1.2.2
+- release): bump version to 1.2.1
+- release): bump version to 1.2.0
+- release): bump version to 1.1.0
+
+### Other Changes
+- refactor: improve workflow and credential import process in test-push.sh
+- refactor: update test workflow and credential handling in test-push.sh
+- Feat: Enable inside n8n container execution and bootstrapping of n8n-git for use within n8n nodes (#3)
+- Apply consistent formatting to Pull and Reset examples with use case descriptions
+- Update README: split push examples with justifications and add cron backup example
+- Initial plan
+
 ## [1.2.2] - 2026-01-07
 
 ### Added
